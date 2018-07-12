@@ -40,14 +40,9 @@ int main()
     }
 
     printf("Supported GLSL version is %s.\n", (char *)glGetString(GL_SHADING_LANGUAGE_VERSION));
-    // render loop
-    // -----------
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
     // Create and compile a vertext shader
-    char const *vertexShaderSource = "#version 330 core\nlayout (location = 0) in vec3 aPos; void main() { gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0); }";
+    char const *vertexShaderSource = "#version 330 core\nlayout (location = 0) in vec3 aPos; out vec4 vertexColor; void main() { gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0); vertexColor = vec4(0.5, 0.0, 0.0, 1.0);}";
     unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
@@ -63,28 +58,58 @@ int main()
     }
 
     // Create and compile a fragment shader
+    char const *fragmentShaderSource = "#version 330 core\nin vec4 vertexColor; out vec4 FragColor; void main() { FragColor = vertexColor; }";
+    unsigned int fragmentShader;
+    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
 
+    unsigned int shaderProgram;
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if(!success) {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADERPROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+    }
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    float vertices[] = {
+      -0.5f, -0.5f, 0.0f,
+       0.5f, -0.5f, 0.0f,
+       0.0f,  0.5f, 0.0f
+    };
+
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+
+    // copy our vertices array in a buffer for OpenGL to use
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VAO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    // then set the vertex attributes pointers
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // render loop
+    // -----------
     while (!glfwWindowShouldClose(window))
     {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-
-        float vertices[] = {
-          -0.5f, -0.5f, 0.0f,
-           0.5f, -0.5f, 0.0f,
-           0.0f,  0.5f, 0.0f
-        };
-
-
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
+
+        glUseProgram(shaderProgram);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
-
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
