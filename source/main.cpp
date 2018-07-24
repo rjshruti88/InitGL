@@ -4,6 +4,10 @@
 #include <iostream>
 #include <math.h>
 
+#include <../libraries/glm/glm.hpp>
+#include <../libraries/glm/gtc/matrix_transform.hpp>
+#include <../libraries/glm/gtc/type_ptr.hpp>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
@@ -52,9 +56,12 @@ int main()
         "layout (location = 2) in vec2 aTexCoord;\n"
         "out vec3 ourColor;\n"
         "out vec2 TexCoord;\n"
+
+        "uniform mat4 transform;\n"
+
         "void main()\n"
         "{\n"
-        "   gl_Position = vec4(aPos, 1.0);\n"
+        "   gl_Position = transform * vec4(aPos, 1.0);\n"
         "   ourColor = aColor;\n"
         "   TexCoord = aTexCoord;\n"
         "}\0";
@@ -152,6 +159,15 @@ int main()
     }
     stbi_image_free(data);
 
+    //Transforms
+    glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
+    glm::mat4 trans;
+    // trans = glm::translate(trans, glm::vec3(1.0f, 1.0f, 0.0f));
+    trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
+    trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
+    vec = trans * vec;
+    std::cout << vec.x << vec.y << vec.z << std::endl;
+
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -160,6 +176,8 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
+        unsigned int transformLoc = glGetUniformLocation(shaderProgram, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
 
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
