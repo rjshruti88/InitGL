@@ -1,0 +1,4 @@
+cmake_minimum_required(VERSION 3.1)
+
+set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(LIB_DIR ${LIB_DIR} PARENT_SCOPE)
