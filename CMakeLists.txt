@@ -8,3 +8,4 @@ add_subdirectory(libraries/stb)
 
 # Executables
 add_subdirectory(helloTriangle)
+add_subdirectory(helloRectangle)
